@@ -1,18 +1,92 @@
 /* Purpose: Visual system and responsive layout for the server-rendered blog module. */
 :root {
-  --color-page: #f7f8fa;
-  --color-surface: #ffffff;
-  --color-surface-soft: #eef3f7;
-  --color-text: #18202a;
-  --color-muted: #5f6b7a;
-  --color-border: #dfe5ec;
-  --color-primary: #2454a6;
-  --color-primary-dark: #173f80;
-  --color-accent: #0f766e;
-  --shadow-card: 0 16px 40px rgba(24, 32, 42, 0.08);
+  --color-page: #121212;
+  --color-surface: #1e1e1e;
+  --color-surface-soft: #2d2d2d;
+  --color-text: #e0e0e0;
+  --color-muted: #a0a0a0;
+  --color-border: #333333;
+  --color-primary: #5c8dff;
+  --color-primary-dark: #7ca0ff;
+  --color-accent: #4fe0d3;
+  --shadow-card: 0 16px 40px rgba(0, 0, 0, 0.3);
   --radius-card: 8px;
   --content-width: 1120px;
 }
+
+/* 确保站点头部（导航栏）适配深色主题 */
+.site-header {
+  background: rgba(30, 30, 30, 0.92); /* 深色半透明背景 */
+  border-bottom: 1px solid var(--color-border);
+  backdrop-filter: blur(12px);
+}
+
+.site-brand {
+  color: var(--color-text); /* 确保品牌名称在深色主题下可见 */
+  font-weight: 700;
+}
+
+.site-nav a {
+  color: var(--color-text); /* 确保导航链接文字在深色主题下可见 */
+  border: 1px solid transparent; /* 初始边框为透明 */
+  background: transparent; /* 初始背景为透明 */
+}
+
+.site-nav a:hover {
+  border-color: var(--color-primary); /* 悬停时边框变为主色调 */
+}
+
+.site-nav a.active {
+  border-color: var(--color-primary); /* 活跃链接边框变为主色调 */
+}
+
+/* 确保所有表单元素也应用深色主题 */
+input[type="search"],
+input[type="text"],
+input[type="date"],
+input[type="file"],
+textarea {
+  background: var(--color-surface);
+  color: #f5f5f5; /* 米白色字体 */
+  border: 1px solid var(--color-border);
+}
+
+/* 确保代码块在深色主题下可读 */
+.markdown-body pre {
+  background: #2d2d2d;
+  color: #f8f8f2;
+}
+
+.markdown-body code,
+.about-panel code,
+.admin-row code {
+  background: var(--color-surface-soft);
+  color: var(--color-primary);
+}
+
+/* 确保下拉菜单和选项也遵循深色主题 */
+select {
+  background: var(--color-surface);
+  color: #f5f5f5;
+  border: 1px solid var(--color-border);
+}
+
+/* 确保按钮在深色主题下可见 */
+button,
+.button-link {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+button:hover,
+.button-link:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* 移除之前的深色模式变量，因为我们现在默认就是深色模式 */
 
 * {
   box-sizing: border-box;
@@ -40,7 +114,7 @@ a {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgb(27 26 26);
   border-bottom: 1px solid var(--color-border);
   backdrop-filter: blur(12px);
 }
@@ -93,7 +167,7 @@ button {
 .button-link:hover,
 button:hover {
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  /* 保持背景色不变 */
 }
 
 .page-shell {
