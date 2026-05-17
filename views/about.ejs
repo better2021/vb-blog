@@ -1,0 +1,18 @@
+<%- include('partials/head', { title, description, currentPath }) %>
+
+<section class="page-heading">
+  <p class="eyebrow">About</p>
+  <h1>关于这个博客</h1>
+  <p>这里适合发布技术文章、开发笔记和项目复盘。</p>
+</section>
+
+<section class="about-panel">
+  <h2>定位</h2>
+  <p>这个脚手架使用 Node.js、Express、EJS 和本地 Markdown 文件构建，不依赖数据库，适合干净的个人内容发布。</p>
+  <h2>内容</h2>
+  <p>每篇文章用 Front Matter 保存元信息，用 Markdown 编写正文，让写作保持可读、可迁移。</p>
+  <h2>工作流</h2>
+  <p>你可以在本地编写 Markdown，上传文件，也可以使用 <code>/admin</code> 内置后台编辑器。</p>
+</section>
+
+<%- include('partials/footer') %>

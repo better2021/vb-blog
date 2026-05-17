@@ -1,0 +1,27 @@
+<%- include('partials/head', { title, description, currentPath }) %>
+
+<section class="page-heading">
+  <p class="eyebrow">Archive</p>
+  <h1>分类</h1>
+  <p>按主题浏览文章，快速找到相关技术笔记。</p>
+</section>
+
+<section class="archive-grid" aria-label="分类列表">
+  <% categories.forEach((category) => { %>
+    <a class="archive-card" href="/categories/<%= encodeURIComponent(category.name) %>">
+      <span><%= category.name %></span>
+      <strong><%= category.count %> 篇文章</strong>
+    </a>
+  <% }) %>
+</section>
+
+<section class="page-heading compact">
+  <h2>标签</h2>
+</section>
+<div class="tag-cloud">
+  <% tags.forEach((tag) => { %>
+    <a href="/tags/<%= encodeURIComponent(tag.name) %>">#<%= tag.name %></a>
+  <% }) %>
+</div>
+
+<%- include('partials/footer') %>

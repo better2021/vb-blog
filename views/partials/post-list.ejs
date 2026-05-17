@@ -1,0 +1,17 @@
+<div class="post-list <%= viewMode === 'list' ? 'list-view' : 'card-view' %>">
+  <% posts.forEach((post) => { %>
+    <article class="post-card">
+      <div class="post-meta">
+        <time datetime="<%= post.date %>"><%= post.date %></time>
+        <a href="/categories/<%= encodeURIComponent(post.category) %>"><%= post.category %></a>
+      </div>
+      <h2><a href="/posts/<%= post.slug %>"><%= post.title %></a></h2>
+      <p><%= post.excerpt %></p>
+      <div class="tag-row">
+        <% post.tags.forEach((tag) => { %>
+          <a href="/tags/<%= encodeURIComponent(tag) %>">#<%= tag %></a>
+        <% }) %>
+      </div>
+    </article>
+  <% }) %>
+</div>

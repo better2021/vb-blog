@@ -1,0 +1,50 @@
+<%- include('../partials/head', { title, description, currentPath }) %>
+
+<section class="page-heading">
+  <p class="eyebrow">编辑器</p>
+  <h1><%= formTitle %></h1>
+  <p>在表单中填写 Front Matter 元信息，并用 Markdown 编写正文。</p>
+</section>
+
+<% if (error) { %>
+  <div class="notice error"><%= error %></div>
+<% } %>
+
+<form class="editor-form" action="<%= action %>" method="post">
+  <div class="form-grid">
+    <label>
+      Slug（URL 标识）
+      <input name="slug" type="text" maxlength="80" value="<%= post.slug %>" <%= isEditing ? 'readonly' : '' %> required>
+    </label>
+    <label>
+      日期
+      <input name="date" type="date" value="<%= post.date %>" required>
+    </label>
+    <label>
+      标题
+      <input name="title" type="text" maxlength="120" value="<%= post.title %>" required>
+    </label>
+    <label>
+      分类
+      <input name="category" type="text" maxlength="60" value="<%= post.category %>" required>
+    </label>
+  </div>
+  <label>
+    标签
+    <input name="tags" type="text" maxlength="240" value="<%= post.tags %>" placeholder="Express, Markdown, Node.js" required>
+  </label>
+  <label>
+    摘要
+    <textarea name="excerpt" maxlength="220" rows="3" required><%= post.excerpt %></textarea>
+  </label>
+  <label>
+    Markdown 正文
+    <textarea class="markdown-editor" name="content" maxlength="200000" rows="20" required><%= post.content %></textarea>
+  </label>
+  <div class="form-actions">
+    <button type="submit"><%= submitLabel %></button>
+    <a class="button-link" href="/admin">取消</a>
+  </div>
+</form>
+
+<%- include('../partials/footer') %>

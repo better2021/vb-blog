@@ -1,0 +1,24 @@
+<aside class="sidebar" aria-label="归档导航">
+  <section class="sidebar-section">
+    <h2>分类</h2>
+    <div class="chip-list">
+      <% categories.forEach((category) => { %>
+        <a class="chip" href="/categories/<%= encodeURIComponent(category.name) %>">
+          <%= category.name %>
+          <span><%= category.count %></span>
+        </a>
+      <% }) %>
+    </div>
+  </section>
+  <section class="sidebar-section">
+    <h2>标签</h2>
+    <div class="chip-list">
+      <% tags.forEach((tag) => { %>
+        <a class="chip" href="/tags/<%= encodeURIComponent(tag.name) %>">
+          <%= tag.name %>
+          <span><%= tag.count %></span>
+        </a>
+      <% }) %>
+    </div>
+  </section>
+</aside>

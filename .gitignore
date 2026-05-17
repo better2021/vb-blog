@@ -1,0 +1,7 @@
+# Purpose: Ignore local dependency, environment, and runtime artifacts for this blog module.
+node_modules/
+.env
+.env.local
+npm-debug.log*
+server-start.out
+server-start.err

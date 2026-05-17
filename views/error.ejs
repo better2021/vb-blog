@@ -1,0 +1,10 @@
+<%- include('partials/head', { title, description, currentPath }) %>
+
+<section class="error-page">
+  <p class="eyebrow">Error <%= statusCode %></p>
+  <h1><%= message %></h1>
+  <p>你可以返回首页继续浏览文章。</p>
+  <a class="button-link" href="/">返回首页</a>
+</section>
+
+<%- include('partials/footer') %>

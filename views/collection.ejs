@@ -1,0 +1,22 @@
+<%- include('partials/head', { title, description, currentPath }) %>
+
+<section class="page-heading">
+  <p class="eyebrow"><%= collectionType %></p>
+  <h1><%= collectionTitle %></h1>
+  <p>共 <%= posts.length %> 篇文章。</p>
+  <div class="view-switcher inline" aria-label="视图切换">
+    <a class="<%= viewMode === 'card' ? 'active' : '' %>" href="?view=card">卡片</a>
+    <a class="<%= viewMode === 'list' ? 'active' : '' %>" href="?view=list">列表</a>
+  </div>
+</section>
+
+<% if (posts.length > 0) { %>
+  <%- include('partials/post-list', { posts, viewMode }) %>
+<% } else { %>
+  <div class="empty-state">
+    <h2>暂无文章</h2>
+    <p>这个<%= collectionType %>下还没有文章。</p>
+  </div>
+<% } %>
+
+<%- include('partials/footer') %>
