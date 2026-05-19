@@ -125,7 +125,6 @@ The admin area has no login protection by design. Do not expose it publicly with
 
 ## RSS
 
-RSS is available at:
 
 ```text
 http://localhost:3000/rss.xml
