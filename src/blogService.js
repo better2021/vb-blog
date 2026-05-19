@@ -208,12 +208,13 @@ async function deletePost(slug) {
 }
 
 /**
- * Saves an uploaded Markdown file using a safe file name.
+ * Saves an uploaded file (.md or .html) to storage.
  *
  * @param {object} uploadFile Multer file object.
+ * @param {object} [metadata] Optional title/date overrides from the upload form.
  * @returns {Promise<object>} Saved post metadata.
  */
-async function saveUploadedMarkdownFile(uploadFile) {
+async function saveUploadedMarkdownFile(uploadFile, metadata) {
   if (!uploadFile || !uploadFile.originalname || !uploadFile.buffer) {
     throw new Error("Please choose a file to upload.");
   }
@@ -238,6 +239,12 @@ async function saveUploadedMarkdownFile(uploadFile) {
 
   const rawContent = uploadFile.buffer.toString("utf8");
   const post = isHtml ? parseHtmlPost(rawContent, slug) : parseMarkdownPost(rawContent, slug);
+
+  if (metadata) {
+    if (metadata.title) post.title = String(metadata.title).trim();
+    if (metadata.date) post.date = String(metadata.date).trim();
+  }
+
   posts.push(post);
   posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   await kv.set(KV_POSTS_KEY, posts);

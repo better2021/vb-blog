@@ -11,6 +11,16 @@
 <% } %>
 
 <form class="editor-form" action="/admin/upload" method="post" enctype="multipart/form-data">
+  <div class="form-grid">
+    <label>
+      标题（可选）
+      <input name="title" type="text" maxlength="120" value="<%= titleValue %>" placeholder="留空则用文件名或 Front Matter">
+    </label>
+    <label>
+      日期
+      <input name="date" type="date" value="<%= dateValue %>">
+    </label>
+  </div>
   <label>
     Markdown 或 HTML 文件
     <input name="markdown" type="file" accept=".md,.html,text/markdown,text/html" required>

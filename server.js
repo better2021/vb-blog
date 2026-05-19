@@ -314,13 +314,15 @@ app.get("/admin/upload", (request, response) => {
     description: "上传一篇 Markdown 或 HTML 文章",
     currentPath: request.path,
     error: "",
-    message: ""
+    message: "",
+    titleValue: request.query.title || "",
+    dateValue: new Date().toISOString().slice(0, 10)
   });
 });
 
 app.post("/admin/upload", upload.single("markdown"), asyncRoute(async (request, response) => {
   try {
-    const post = await saveUploadedMarkdownFile(request.file);
+    const post = await saveUploadedMarkdownFile(request.file, request.body);
     response.redirect(`/admin?message=${encodeURIComponent(`已上传《${post.title}》。`)}`);
   } catch (error) {
     response.status(400).render("admin/upload", {
@@ -328,7 +330,9 @@ app.post("/admin/upload", upload.single("markdown"), asyncRoute(async (request, 
       description: "上传一篇 Markdown 或 HTML 文章",
       currentPath: request.path,
       error: error.message,
-      message: ""
+      message: "",
+      titleValue: request.body.title || "",
+      dateValue: request.body.date || new Date().toISOString().slice(0, 10)
     });
   }
 }));
