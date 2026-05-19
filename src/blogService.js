@@ -111,7 +111,7 @@ function parseHtmlPost(rawContent, slug) {
     date: normalizeDate(parsedPost.data.date) || new Date().toISOString().slice(0, 10),
     category: parsedPost.data.category || "Uncategorized",
     tags: normalizeTags(parsedPost.data.tags),
-    excerpt: parsedPost.data.excerpt || body.slice(0, MAX_EXCERPT_LENGTH) || "HTML 页面",
+    excerpt: parsedPost.data.excerpt || "HTML 页面",
     content: body,
     html: body
   };
@@ -227,7 +227,8 @@ async function saveUploadedMarkdownFile(uploadFile, metadata) {
     throw new Error("Only .md and .html files can be uploaded.");
   }
 
-  const slug = sanitizeSlug(uploadFile.originalname.replace(/\.(md|html)$/i, ""));
+  const slugFromFile = sanitizeSlug(uploadFile.originalname.replace(/\.(md|html)$/i, ""));
+  const slug = metadata?.slug ? sanitizeSlug(metadata.slug) : slugFromFile;
   if (!slug) {
     throw new Error("Uploaded file name must contain letters or numbers.");
   }
@@ -243,7 +244,13 @@ async function saveUploadedMarkdownFile(uploadFile, metadata) {
   if (metadata) {
     if (metadata.title) post.title = String(metadata.title).trim();
     if (metadata.date) post.date = String(metadata.date).trim();
+    if (metadata.category) post.category = String(metadata.category).trim();
+    if (metadata.excerpt) post.excerpt = String(metadata.excerpt).trim();
+    if (metadata.tags) post.tags = normalizeTags(metadata.tags);
   }
+
+  // Persist metadata into raw content so it survives re-read from GitHub
+  post.raw = buildFrontMatter(post) + post.content;
 
   posts.push(post);
   posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -275,6 +282,28 @@ function normalizePostInput(postInput) {
   }
 
   return { slug, title, date, category, tags, excerpt, content };
+}
+
+/**
+ * Builds YAML Front Matter string from post metadata.
+ *
+ * @param {object} post Post with metadata fields.
+ * @returns {string} Front Matter block.
+ */
+function buildFrontMatter(post) {
+  const tagsText = post.tags.map((tag) => `  - ${tag}`).join("\n");
+
+  return [
+    "---",
+    `title: ${post.title}`,
+    `date: ${post.date}`,
+    `category: ${post.category}`,
+    "tags:",
+    tagsText,
+    `excerpt: ${post.excerpt}`,
+    "---",
+    ""
+  ].join("\n");
 }
 
 /**

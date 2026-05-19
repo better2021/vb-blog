@@ -3,7 +3,7 @@
 <section class="page-heading">
   <p class="eyebrow">上传</p>
   <h1>上传文件</h1>
-  <p>上传 .md 或 .html 文件，文件名会作为文章 slug。</p>
+  <p>上传 .md 或 .html 文件。</p>
 </section>
 
 <% if (error) { %>
@@ -13,14 +13,30 @@
 <form class="editor-form" action="/admin/upload" method="post" enctype="multipart/form-data">
   <div class="form-grid">
     <label>
-      标题（可选）
-      <input name="title" type="text" maxlength="120" value="<%= titleValue %>" placeholder="留空则用文件名或 Front Matter">
+      Slug（URL 标识，留空则用文件名）
+      <input name="slug" type="text" maxlength="80" value="<%= slugValue %>" placeholder="留空自动生成">
     </label>
     <label>
       日期
       <input name="date" type="date" value="<%= dateValue %>">
     </label>
+    <label>
+      标题（可选）
+      <input name="title" type="text" maxlength="120" value="<%= titleValue %>" placeholder="留空则用文件名或 Front Matter">
+    </label>
+    <label>
+      分类
+      <input name="category" type="text" maxlength="60" value="<%= categoryValue %>" placeholder="如 Node.js, Design">
+    </label>
   </div>
+  <label>
+    标签（逗号分隔）
+    <input name="tags" type="text" maxlength="240" value="<%= tagsValue %>" placeholder="Express, Markdown, Node.js">
+  </label>
+  <label>
+    摘要
+    <textarea name="excerpt" maxlength="220" rows="3"><%= excerptValue %></textarea>
+  </label>
   <label>
     Markdown 或 HTML 文件
     <input name="markdown" type="file" accept=".md,.html,text/markdown,text/html" required>

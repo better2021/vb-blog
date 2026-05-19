@@ -87,7 +87,12 @@ async function downloadFile(url) {
 
 // Lazy-require to break circular dependency (blogService → kv → blogService)
 function parsePost(raw, slug) {
-  return require("./blogService").parseMarkdownPost(raw, slug);
+  try {
+    return require("./blogService").parseMarkdownPost(raw, slug);
+  } catch {
+    // If markdown parsing fails (e.g. HTML file with .md extension), try HTML fallback
+    return require("./blogService").parseHtmlPost(raw, slug);
+  }
 }
 
 // ── Client selection ────────────────────────────────────────────────────────

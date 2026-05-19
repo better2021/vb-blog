@@ -316,8 +316,12 @@ app.get("/admin/upload", (request, response) => {
     currentPath: request.path,
     error: "",
     message: "",
-    titleValue: request.query.title || "",
-    dateValue: new Date().toISOString().slice(0, 10)
+    slugValue: "",
+    titleValue: "",
+    dateValue: new Date().toISOString().slice(0, 10),
+    categoryValue: "",
+    tagsValue: "",
+    excerptValue: ""
   });
 });
 
@@ -332,8 +336,12 @@ app.post("/admin/upload", upload.single("markdown"), asyncRoute(async (request, 
       currentPath: request.path,
       error: error.message,
       message: "",
+      slugValue: request.body.slug || "",
       titleValue: request.body.title || "",
-      dateValue: request.body.date || new Date().toISOString().slice(0, 10)
+      dateValue: request.body.date || new Date().toISOString().slice(0, 10),
+      categoryValue: request.body.category || "",
+      tagsValue: request.body.tags || "",
+      excerptValue: request.body.excerpt || ""
     });
   }
 }));
@@ -421,9 +429,23 @@ function escapeXml(value) {
 }
 
 if (require.main === module) {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     process.stdout.write(`Blog server is running at http://localhost:${PORT}\n`);
   });
+
+  server.on("error", (error) => {
+    if (error.code === "EADDRINUSE") {
+      process.stderr.write(`Port ${PORT} is already in use. Stop the existing process or set PORT to another value.\n`);
+      process.exitCode = 1;
+      return;
+    }
+
+    throw error;
+  });
+
+  // Graceful shutdown for node --watch: close the port before restart
+  process.on("SIGTERM", () => server.close());
+  process.on("SIGINT", () => server.close());
 }
 
 module.exports = app;
