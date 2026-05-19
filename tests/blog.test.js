@@ -193,7 +193,7 @@ test("test_upload_rejects_non_markdown_file", async () => {
     .attach("markdown", Buffer.from("plain text"), "notes.txt")
     .expect(400);
 
-  assert.match(response.text, /Only \.md files can be uploaded/);
+  assert.match(response.text, /Only \.md and \.html files can be uploaded/);
 });
 
 test("test_upload_rejects_conflicting_markdown_file", async () => {
@@ -203,6 +203,20 @@ test("test_upload_rejects_conflicting_markdown_file", async () => {
     .expect(400);
 
   assert.match(response.text, /already exists/);
+});
+
+test("test_upload_html_file_creates_post", async () => {
+  const htmlContent = "<h1>Hello HTML</h1><p>Body content</p>";
+  await request(app)
+    .post("/admin/upload")
+    .attach("markdown", Buffer.from(htmlContent), "hello-html.html")
+    .expect(302);
+
+  const posts = await kv.get("blog:posts");
+  const created = posts.find((p) => p.slug === "hello-html");
+  assert.ok(created);
+  assert.match(created.html, /<h1>Hello HTML<\/h1>/);
+  assert.equal(created.fileName, "hello-html.html");
 });
 
 test("test_rss_returns_xml_with_full_content", async () => {

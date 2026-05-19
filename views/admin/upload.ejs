@@ -2,8 +2,8 @@
 
 <section class="page-heading">
   <p class="eyebrow">上传</p>
-  <h1>上传 Markdown</h1>
-  <p>上传一个带 Front Matter 的 .md 文件，文件名会作为文章 slug。</p>
+  <h1>上传文件</h1>
+  <p>上传 .md 或 .html 文件，文件名会作为文章 slug。</p>
 </section>
 
 <% if (error) { %>
@@ -12,8 +12,8 @@
 
 <form class="editor-form" action="/admin/upload" method="post" enctype="multipart/form-data">
   <label>
-    Markdown 文件
-    <input name="markdown" type="file" accept=".md,text/markdown" required>
+    Markdown 或 HTML 文件
+    <input name="markdown" type="file" accept=".md,.html,text/markdown,text/html" required>
   </label>
   <div class="form-actions">
     <button type="submit">上传</button>

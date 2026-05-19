@@ -38,7 +38,7 @@
     <textarea name="excerpt" maxlength="220" rows="3" required><%= post.excerpt %></textarea>
   </label>
   <label>
-    Markdown 正文
+    <span><%= (post.fileName || '').endsWith('.html') ? 'HTML' : 'Markdown' %> 正文</span>
     <textarea class="markdown-editor" name="content" maxlength="200000" rows="20" required><%= post.content %></textarea>
   </label>
   <div class="form-actions">

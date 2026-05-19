@@ -310,8 +310,8 @@ app.post("/admin/posts/:slug/delete", asyncRoute(async (request, response) => {
 
 app.get("/admin/upload", (request, response) => {
   response.render("admin/upload", {
-    title: "上传 Markdown",
-    description: "上传一篇 Markdown 文章",
+    title: "上传文件",
+    description: "上传一篇 Markdown 或 HTML 文章",
     currentPath: request.path,
     error: "",
     message: ""
@@ -324,8 +324,8 @@ app.post("/admin/upload", upload.single("markdown"), asyncRoute(async (request, 
     response.redirect(`/admin?message=${encodeURIComponent(`已上传《${post.title}》。`)}`);
   } catch (error) {
     response.status(400).render("admin/upload", {
-      title: "上传 Markdown",
-      description: "上传一篇 Markdown 文章",
+      title: "上传文件",
+      description: "上传一篇 Markdown 或 HTML 文章",
       currentPath: request.path,
       error: error.message,
       message: ""

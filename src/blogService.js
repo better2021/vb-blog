@@ -15,6 +15,7 @@ const MAX_TAG_LENGTH = 40;
 const MAX_EXCERPT_LENGTH = 220;
 const MAX_MARKDOWN_LENGTH = 200000;
 const MARKDOWN_EXTENSION = ".md";
+const HTML_EXTENSION = ".html";
 const VALID_VIEW_MODES = new Set(["card", "list"]);
 const DEFAULT_VIEW_MODE = "card";
 
@@ -77,6 +78,43 @@ function parseMarkdownPost(rawContent, slug) {
 
   validatePost(post);
   return post;
+}
+
+/**
+ * Parses an HTML file into a template-ready post object.
+ * Supports optional YAML front matter.
+ *
+ * @param {string} rawContent Raw HTML file content.
+ * @param {string} slug URL slug.
+ * @returns {object} Parsed post object.
+ */
+function parseHtmlPost(rawContent, slug) {
+  const fileName = `${slug}${HTML_EXTENSION}`;
+
+  let parsedPost;
+  try {
+    parsedPost = matter(rawContent);
+  } catch {
+    return {
+      slug, fileName, filePath: fileName, raw: rawContent,
+      title: slug.replace(/[-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      date: new Date().toISOString().slice(0, 10),
+      category: "Uncategorized", tags: [], excerpt: "HTML 页面",
+      content: rawContent.trim(), html: rawContent.trim()
+    };
+  }
+
+  const body = parsedPost.content.trim();
+  return {
+    slug, fileName, filePath: fileName, raw: rawContent,
+    title: parsedPost.data.title || slug,
+    date: normalizeDate(parsedPost.data.date) || new Date().toISOString().slice(0, 10),
+    category: parsedPost.data.category || "Uncategorized",
+    tags: normalizeTags(parsedPost.data.tags),
+    excerpt: parsedPost.data.excerpt || body.slice(0, MAX_EXCERPT_LENGTH) || "HTML 页面",
+    content: body,
+    html: body
+  };
 }
 
 /**
@@ -177,14 +215,18 @@ async function deletePost(slug) {
  */
 async function saveUploadedMarkdownFile(uploadFile) {
   if (!uploadFile || !uploadFile.originalname || !uploadFile.buffer) {
-    throw new Error("Please choose a Markdown file to upload.");
+    throw new Error("Please choose a file to upload.");
   }
 
-  if (!uploadFile.originalname.toLocaleLowerCase().endsWith(MARKDOWN_EXTENSION)) {
-    throw new Error("Only .md files can be uploaded.");
+  const name = uploadFile.originalname.toLocaleLowerCase();
+  const isHtml = name.endsWith(HTML_EXTENSION);
+  const isMd = name.endsWith(MARKDOWN_EXTENSION);
+
+  if (!isMd && !isHtml) {
+    throw new Error("Only .md and .html files can be uploaded.");
   }
 
-  const slug = sanitizeSlug(uploadFile.originalname.replace(/\.md$/i, ""));
+  const slug = sanitizeSlug(uploadFile.originalname.replace(/\.(md|html)$/i, ""));
   if (!slug) {
     throw new Error("Uploaded file name must contain letters or numbers.");
   }
@@ -195,7 +237,7 @@ async function saveUploadedMarkdownFile(uploadFile) {
   }
 
   const rawContent = uploadFile.buffer.toString("utf8");
-  const post = parseMarkdownPost(rawContent, slug);
+  const post = isHtml ? parseHtmlPost(rawContent, slug) : parseMarkdownPost(rawContent, slug);
   posts.push(post);
   posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   await kv.set(KV_POSTS_KEY, posts);
@@ -519,6 +561,7 @@ module.exports = {
   normalizePostInput,
   paginatePosts,
   parseMarkdownPost,
+  parseHtmlPost,
   sanitizePageNumber,
   sanitizeSearchQuery,
   sanitizeSlug,
