@@ -1,3 +1,11 @@
+---
+title: claude-code教程
+date: 2026-05-19
+category: AI
+tags:
+  - claude-code
+excerpt: claude-code 可视化教程
+---
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
