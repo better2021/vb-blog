@@ -6,9 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node --test",
-    "import": "node scripts/import-posts.js",
-    "vercel-build": "node scripts/import-posts.js"
+    "test": "node --test"
   },
   "keywords": [
     "blog",
@@ -19,8 +17,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@ant-design/cssinjs": "^2.1.2",
-    "@vercel/kv": "^2.0.0",
     "ejs": "3.1.10",
     "express": "4.21.2",
     "gray-matter": "4.0.3",
