@@ -1,4 +1,5 @@
 // Purpose: Express application entrypoint for the server-rendered Markdown blog module.
+require("dotenv").config();
 const path = require("node:path");
 const express = require("express");
 const multer = require("multer");
