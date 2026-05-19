@@ -1,12 +1,10 @@
 // Purpose: Route and content-management coverage for the server-rendered Markdown blog module.
 const assert = require("node:assert/strict");
-const fs = require("node:fs/promises");
-const os = require("node:os");
-const path = require("node:path");
 const test = require("node:test");
 const request = require("supertest");
+const { kv, _resetStore } = require("../src/kv");
+const { parseMarkdownPost } = require("../src/blogService");
 
-process.env.BLOG_POSTS_DIR = path.join(os.tmpdir(), `blog-posts-${process.pid}`);
 process.env.SITE_URL = "https://example.test";
 
 const app = require("../server");
@@ -50,20 +48,23 @@ const SECOND_POST = [
 ].join("\n");
 
 test.beforeEach(async () => {
-  await fs.rm(process.env.BLOG_POSTS_DIR, { recursive: true, force: true });
-  await fs.mkdir(process.env.BLOG_POSTS_DIR, { recursive: true });
-  await fs.writeFile(path.join(process.env.BLOG_POSTS_DIR, "building-readable-node-services.md"), FIRST_POST, "utf8");
-  await fs.writeFile(path.join(process.env.BLOG_POSTS_DIR, "clean-blog-layout-principles.md"), SECOND_POST, "utf8");
+  _resetStore();
+  const firstPost = parseMarkdownPost(FIRST_POST, "building-readable-node-services");
+  const secondPost = parseMarkdownPost(SECOND_POST, "clean-blog-layout-principles");
+  const seedPosts = [firstPost, secondPost].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+  await kv.set("blog:posts", seedPosts);
 });
 
-test.after(async () => {
-  await fs.rm(process.env.BLOG_POSTS_DIR, { recursive: true, force: true });
+test.after(() => {
+  _resetStore();
 });
 
 test("test_homepage_returns_markdown_article_list", async () => {
   const response = await request(app).get("/").expect(200);
 
-  assert.match(response.text, /Technical Articles and Personal Notes/);
+  assert.match(response.text, /技术文章与个人笔记/);
   assert.match(response.text, /Building Readable Node\.js Services/);
 });
 
@@ -91,13 +92,13 @@ test("test_homepage_supports_search_results_from_markdown_body", async () => {
 test("test_homepage_handles_empty_search_results", async () => {
   const response = await request(app).get("/?q=not-a-real-post").expect(200);
 
-  assert.match(response.text, /No matching posts/);
+  assert.match(response.text, /没有找到相关文章/);
 });
 
 test("test_post_detail_returns_404_for_unknown_slug", async () => {
   const response = await request(app).get("/posts/unknown-post").expect(404);
 
-  assert.match(response.text, /Page Not Found/);
+  assert.match(response.text, /页面未找到/);
 });
 
 test("test_category_page_filters_articles", async () => {
@@ -117,13 +118,13 @@ test("test_tag_page_filters_articles", async () => {
 test("test_about_page_returns_success", async () => {
   const response = await request(app).get("/about").expect(200);
 
-  assert.match(response.text, /About this Blog/);
+  assert.match(response.text, /关于这个博客/);
 });
 
 test("test_admin_homepage_returns_article_list", async () => {
   const response = await request(app).get("/admin").expect(200);
 
-  assert.match(response.text, /Markdown Posts/);
+  assert.match(response.text, /Markdown 文章/);
   assert.match(response.text, /Building Readable Node\.js Services/);
 });
 
@@ -142,8 +143,10 @@ test("test_admin_create_post_writes_markdown_file", async () => {
     })
     .expect(302);
 
-  const savedPost = await fs.readFile(path.join(process.env.BLOG_POSTS_DIR, "new-markdown-post.md"), "utf8");
-  assert.match(savedPost, /title: New Markdown Post/);
+  const posts = await kv.get("blog:posts");
+  const created = posts.find((p) => p.slug === "new-markdown-post");
+  assert.ok(created);
+  assert.equal(created.title, "New Markdown Post");
 });
 
 test("test_admin_edit_post_updates_markdown_file", async () => {
@@ -160,9 +163,11 @@ test("test_admin_edit_post_updates_markdown_file", async () => {
     })
     .expect(302);
 
-  const savedPost = await fs.readFile(path.join(process.env.BLOG_POSTS_DIR, "building-readable-node-services.md"), "utf8");
-  assert.match(savedPost, /title: Updated Node Service Notes/);
-  assert.match(savedPost, /Updated body/);
+  const posts = await kv.get("blog:posts");
+  const updated = posts.find((p) => p.slug === "building-readable-node-services");
+  assert.ok(updated);
+  assert.equal(updated.title, "Updated Node Service Notes");
+  assert.match(updated.content, /Updated body/);
 });
 
 test("test_admin_list_contains_delete_confirmation", async () => {
@@ -177,10 +182,8 @@ test("test_admin_delete_post_removes_markdown_file", async () => {
     .post("/admin/posts/building-readable-node-services/delete")
     .expect(302);
 
-  await assert.rejects(
-    fs.access(path.join(process.env.BLOG_POSTS_DIR, "building-readable-node-services.md"))
-  );
-
+  const posts = await kv.get("blog:posts");
+  assert.equal(posts.find((p) => p.slug === "building-readable-node-services"), undefined);
   await request(app).get("/posts/building-readable-node-services").expect(404);
 });
 

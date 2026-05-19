@@ -1,11 +1,10 @@
 // Purpose: Markdown content access, validation, and query helpers for the blog module.
-const fs = require("node:fs/promises");
-const path = require("node:path");
 const matter = require("gray-matter");
 const MarkdownIt = require("markdown-it");
 const highlightjs = require("highlight.js");
+const { kv } = require("./kv");
 
-const DEFAULT_POSTS_DIRECTORY = path.join(__dirname, "..", "content", "posts");
+const KV_POSTS_KEY = "blog:posts";
 const POSTS_PER_PAGE = 5;
 const DEFAULT_PAGE_NUMBER = 1;
 const MAX_SEARCH_QUERY_LENGTH = 80;
@@ -37,61 +36,13 @@ const markdownRenderer = new MarkdownIt({
 });
 
 /**
- * Returns the configured Markdown posts directory.
- *
- * @returns {string} Absolute posts directory.
- */
-function getPostsDirectory() {
-  return process.env.BLOG_POSTS_DIR || DEFAULT_POSTS_DIRECTORY;
-}
-
-/**
- * Reads and validates local Markdown posts.
+ * Reads all posts from KV storage.
  *
  * @returns {Promise<Array<object>>} Posts sorted by newest first.
- * @throws {Error} When posts cannot be read or parsed.
  */
 async function getPosts() {
-  const postsDirectory = getPostsDirectory();
-  await ensurePostsDirectory(postsDirectory);
-
-  let fileNames;
-
-  try {
-    fileNames = await fs.readdir(postsDirectory);
-  } catch (error) {
-    throw new Error(`Unable to read posts directory: ${error.message}`);
-  }
-
-  const markdownFileNames = fileNames.filter((fileName) => path.extname(fileName) === MARKDOWN_EXTENSION);
-  const posts = await Promise.all(markdownFileNames.map(readPostFile));
-
-  return posts.toSorted((leftPost, rightPost) => {
-    return new Date(rightPost.date).getTime() - new Date(leftPost.date).getTime();
-  });
-}
-
-/**
- * Reads one Markdown post file.
- *
- * @param {string} fileName Markdown file name.
- * @returns {Promise<object>} Parsed post.
- * @throws {Error} When the post file cannot be read or validated.
- */
-async function readPostFile(fileName) {
-  const postsDirectory = getPostsDirectory();
-  const postPath = path.join(postsDirectory, fileName);
-  const slug = path.basename(fileName, MARKDOWN_EXTENSION);
-
-  let rawContent;
-
-  try {
-    rawContent = await fs.readFile(postPath, "utf8");
-  } catch (error) {
-    throw new Error(`Unable to read post "${fileName}": ${error.message}`);
-  }
-
-  return parseMarkdownPost(rawContent, slug, postPath);
+  const posts = await kv.get(KV_POSTS_KEY);
+  return posts || [];
 }
 
 /**
@@ -99,10 +50,9 @@ async function readPostFile(fileName) {
  *
  * @param {string} rawContent Raw Markdown file content.
  * @param {string} slug URL slug.
- * @param {string} postPath Absolute post file path.
  * @returns {object} Parsed post object.
  */
-function parseMarkdownPost(rawContent, slug, postPath) {
+function parseMarkdownPost(rawContent, slug) {
   let parsedPost;
 
   try {
@@ -114,7 +64,7 @@ function parseMarkdownPost(rawContent, slug, postPath) {
   const post = {
     slug,
     fileName: `${slug}${MARKDOWN_EXTENSION}`,
-    filePath: postPath,
+    filePath: `${slug}${MARKDOWN_EXTENSION}`,
     raw: rawContent,
     title: parsedPost.data.title,
     date: normalizeDate(parsedPost.data.date),
@@ -163,15 +113,18 @@ function validatePost(post) {
  */
 async function createPost(postInput) {
   const normalizedPost = normalizePostInput(postInput);
-  const postPath = buildPostPath(normalizedPost.slug);
+  const posts = await getPosts();
 
-  if (await fileExists(postPath)) {
+  if (posts.some((post) => post.slug === normalizedPost.slug)) {
     throw new Error("A post with this slug already exists.");
   }
 
-  await ensurePostsDirectory(getPostsDirectory());
-  await fs.writeFile(postPath, buildMarkdownFile(normalizedPost), "utf8");
-  return getPostBySlug(await getPosts(), normalizedPost.slug);
+  const rawContent = buildMarkdownFile(normalizedPost);
+  const post = parseMarkdownPost(rawContent, normalizedPost.slug);
+  posts.push(post);
+  posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  await kv.set(KV_POSTS_KEY, posts);
+  return post;
 }
 
 /**
@@ -183,15 +136,18 @@ async function createPost(postInput) {
  */
 async function updatePost(slug, postInput) {
   const safeSlug = requireSafeSlug(slug);
-  const postPath = buildPostPath(safeSlug);
+  const posts = await getPosts();
+  const index = posts.findIndex((post) => post.slug === safeSlug);
 
-  if (!await fileExists(postPath)) {
+  if (index === -1) {
     throw new Error("Post not found.");
   }
 
   const normalizedPost = normalizePostInput({ ...postInput, slug: safeSlug });
-  await fs.writeFile(postPath, buildMarkdownFile(normalizedPost), "utf8");
-  return getPostBySlug(await getPosts(), safeSlug);
+  const rawContent = buildMarkdownFile(normalizedPost);
+  posts[index] = parseMarkdownPost(rawContent, normalizedPost.slug);
+  await kv.set(KV_POSTS_KEY, posts);
+  return posts[index];
 }
 
 /**
@@ -202,13 +158,15 @@ async function updatePost(slug, postInput) {
  */
 async function deletePost(slug) {
   const safeSlug = requireSafeSlug(slug);
-  const postPath = buildPostPath(safeSlug);
+  const posts = await getPosts();
+  const index = posts.findIndex((post) => post.slug === safeSlug);
 
-  if (!await fileExists(postPath)) {
+  if (index === -1) {
     throw new Error("Post not found.");
   }
 
-  await fs.unlink(postPath);
+  posts.splice(index, 1);
+  await kv.set(KV_POSTS_KEY, posts);
 }
 
 /**
@@ -222,26 +180,26 @@ async function saveUploadedMarkdownFile(uploadFile) {
     throw new Error("Please choose a Markdown file to upload.");
   }
 
-  if (path.extname(uploadFile.originalname).toLocaleLowerCase() !== MARKDOWN_EXTENSION) {
+  if (!uploadFile.originalname.toLocaleLowerCase().endsWith(MARKDOWN_EXTENSION)) {
     throw new Error("Only .md files can be uploaded.");
   }
 
-  const slug = sanitizeSlug(path.basename(uploadFile.originalname, path.extname(uploadFile.originalname)));
-  const postPath = buildPostPath(slug);
-
+  const slug = sanitizeSlug(uploadFile.originalname.replace(/\.md$/i, ""));
   if (!slug) {
     throw new Error("Uploaded file name must contain letters or numbers.");
   }
 
-  if (await fileExists(postPath)) {
+  const posts = await getPosts();
+  if (posts.some((post) => post.slug === slug)) {
     throw new Error("A post with this file name already exists.");
   }
 
   const rawContent = uploadFile.buffer.toString("utf8");
-  parseMarkdownPost(rawContent, slug, postPath);
-  await ensurePostsDirectory(getPostsDirectory());
-  await fs.writeFile(postPath, rawContent, "utf8");
-  return getPostBySlug(await getPosts(), slug);
+  const post = parseMarkdownPost(rawContent, slug);
+  posts.push(post);
+  posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  await kv.set(KV_POSTS_KEY, posts);
+  return post;
 }
 
 /**
@@ -478,42 +436,6 @@ function buildArchiveItems(archiveMap) {
 }
 
 /**
- * Ensures the content directory exists.
- *
- * @param {string} postsDirectory Absolute posts directory.
- * @returns {Promise<void>}
- */
-async function ensurePostsDirectory(postsDirectory) {
-  await fs.mkdir(postsDirectory, { recursive: true });
-}
-
-/**
- * Checks whether a file exists.
- *
- * @param {string} filePath Absolute file path.
- * @returns {Promise<boolean>} Whether the file exists.
- */
-async function fileExists(filePath) {
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
-
-/**
- * Builds a safe absolute post file path.
- *
- * @param {string} slug Post slug.
- * @returns {string} Absolute file path.
- */
-function buildPostPath(slug) {
-  const safeSlug = requireSafeSlug(slug);
-  return path.join(getPostsDirectory(), `${safeSlug}${MARKDOWN_EXTENSION}`);
-}
-
-/**
  * Requires a valid slug and returns it.
  *
  * @param {unknown} slug Input slug.
@@ -596,6 +518,7 @@ module.exports = {
   getPosts,
   normalizePostInput,
   paginatePosts,
+  parseMarkdownPost,
   sanitizePageNumber,
   sanitizeSearchQuery,
   sanitizeSlug,

@@ -5,3 +5,4 @@ node_modules/
 npm-debug.log*
 server-start.out
 server-start.err
+data/
