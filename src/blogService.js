@@ -62,6 +62,8 @@ function parseMarkdownPost(rawContent, slug) {
     throw new Error(`Unable to parse Markdown post "${slug}": ${error.message}`);
   }
 
+  const content = parsedPost.content.trim();
+
   const post = {
     slug,
     fileName: `${slug}${MARKDOWN_EXTENSION}`,
@@ -72,8 +74,10 @@ function parseMarkdownPost(rawContent, slug) {
     category: parsedPost.data.category,
     tags: normalizeTags(parsedPost.data.tags),
     excerpt: parsedPost.data.excerpt,
-    content: parsedPost.content.trim(),
-    html: markdownRenderer.render(parsedPost.content)
+    content,
+    html: /^\s*<(html|!DOCTYPE|!doctype|head|body|div|span|p|h[1-6]|table|ul|ol|section|article)/i.test(content)
+      ? content
+      : markdownRenderer.render(parsedPost.content)
   };
 
   validatePost(post);
