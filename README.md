@@ -104,8 +104,6 @@ The example above becomes:
 /posts/building-readable-node-services
 ```
 
-Raw HTML inside Markdown is disabled by the renderer.
-
 ## Admin
 
 Open:
