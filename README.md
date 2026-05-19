@@ -152,4 +152,3 @@ Common platforms:
 - VPS: install Node.js, run `npm ci --omit=dev`, then manage `npm start` with a process manager
 - Docker or platform images: expose `PORT` and set `SITE_URL`
 
-Do not hard-code secrets in source files. Use environment variables for deployment configuration.
