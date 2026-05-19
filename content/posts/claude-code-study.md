@@ -1,3 +1,12 @@
+---
+title: claude-code教程
+date: 2026-05-19
+category: 编程工具
+tags:
+  - AI编程工具
+excerpt: HTML 页面
+---
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
